@@ -1,0 +1,17 @@
+# 样例文件，尚未启用。替换占位符、授予写权限并确认套餐支持后再改名为 CODEOWNERS。
+# 最后匹配的规则生效；这不是文件写权限控制。
+* @MFJ-123
+**/access/** @MFJ-123
+**/clue/** @B_GITHUB
+**/rescue/** @B_GITHUB
+**/animalcare/** @C_GITHUB
+**/adoption/** @D_GITHUB
+**/followup/** @E_GITHUB
+**/operations/** @E_GITHUB
+**/operations/audit/** @MFJ-123
+**/operations/outbox/** @MFJ-123
+**/attachments/** @C_GITHUB
+/db/migration/** @D_GITHUB
+/.github/** @MFJ-123
+/deploy/** @MFJ-123
+/docs/baseline/** @MFJ-123
