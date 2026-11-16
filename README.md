@@ -78,7 +78,7 @@ npm run build
 
 普通后端测试不依赖数据库；集成测试执行真实迁移、重复迁移、SQL 和 HTTP 验证，不使用已有业务数据。前后端启动后，在 frontend 执行 npx playwright install chromium，再执行 npm run test:e2e，验证桌面/手机尺寸的真实连接、导航、刷新与失败恢复。浏览器下载不可用时，可在本机设置 SAR_BROWSER_EXECUTABLE 为已有 Chrome 的完整程序路径；CI 使用 Playwright 配套 Chromium。
 
-在仓库根目录统一构建：
+在仓库根目录统一构建。Windows 下先停止正在运行的旧 JAR，再执行，以免旧进程锁住构建文件：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File scripts/build.ps1

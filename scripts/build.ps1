@@ -1,4 +1,4 @@
-param([switch]$WithMysqlTests)
+﻿param([switch]$WithMysqlTests)
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path $PSScriptRoot -Parent
 Push-Location (Join-Path $repoRoot 'frontend')
