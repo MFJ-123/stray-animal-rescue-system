@@ -4,6 +4,7 @@ from urllib.parse import unquote
 import csv
 import hashlib
 import json
+import os
 import re
 import sys
 
@@ -72,9 +73,12 @@ for item in manifest['files']:
     if p.is_file():
         check(hashlib.sha256(p.read_bytes()).hexdigest() == item['sha256'], f'Changed baseline hash: {p.name}')
 
-for p in ROOT.rglob('*.md'):
-    if '.git' in p.parts:
-        continue
+excluded_dirs = {'.git', 'node_modules', 'target', 'dist', 'test-results', 'playwright-report'}
+markdown_files = []
+for directory, subdirs, files in os.walk(ROOT):
+    subdirs[:] = [name for name in subdirs if name not in excluded_dirs]
+    markdown_files.extend(Path(directory) / name for name in files if name.endswith('.md'))
+for p in markdown_files:
     for target in re.findall(r'\]\(([^)]+)\)', p.read_text(encoding='utf-8')):
         if re.match(r'\w+://', target) or target.startswith('#'):
             continue

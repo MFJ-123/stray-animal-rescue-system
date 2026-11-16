@@ -1,4 +1,11 @@
-# 后端目录
-A 建立统一 Spring Boot 工程。web 和 jobs 为接入层，domain 为业务层，persistence 为持久化层，按业务子包分工。当前无 pom.xml 或应用源码。Java 17、MySQL Server 8.0.46 社区版 / InnoDB 为基线，其余确切版本经共同验证后锁定。跨包通过服务契约调用，不修改别人的表。
+# 后端
 
-全组在连接目标数据库后执行 `SELECT VERSION();` 核对服务端版本。MySQL Workbench 8.0 CE 可作为管理工具；应用通过数据库驱动连接 MySQL Server。选型变更见[数据库版本变更记录](../docs/数据库版本变更记录.md)。
+Java 17、Spring Boot 3.5.16、Maven Wrapper 3.9.11、MySQL Server 8.0.46 / InnoDB。当前实现连接检查、统一响应、请求号、异常处理和 Flyway 迁移。
+
+设置 SAR_DB_URL、SAR_DB_USER、SAR_DB_PASSWORD 后执行 mvnw.cmd spring-boot:run，默认 127.0.0.1:8080，完整命令见[首页](../README.md)。
+
+web 和 jobs 为接入层；domain 为业务层；persistence 为持久化层；common 维护响应、请求号和时钟。各负责人在这些层下使用 access/clue/rescue/animalcare/adoption/followup/operations 业务包；system 只用于工程自检。
+
+控制器不直接操作数据库，跨包通过服务契约调用；Clock 默认 UTC，可在测试替换。登录及权限尚未实现，当前仅有不含敏感资料的公共自检接口。业务接口必须按后续权限规范接入。
+
+mvnw.cmd test 执行无需数据库的单元测试；mvnw.cmd -Pmysql-it verify 额外运行真实 MySQL 测试。SQL 唯一源为根 db/migration，Maven 自动纳入资源；前端先构建后，frontend/dist 也打入 sar.jar。完整交付使用根 scripts/build.ps1。

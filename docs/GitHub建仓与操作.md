@@ -2,7 +2,7 @@
 
 ## 仓库及当前阶段
 
-公开仓库已创建：[MFJ-123/stray-animal-rescue-system](https://github.com/MFJ-123/stray-animal-rescue-system)。本次初始化内容包括协作方案、追踪清单、模板和两份基线文档，尚无可运行应用源码。原有 A—E 分工继续适用。
+公开仓库已创建：[MFJ-123/stray-animal-rescue-system](https://github.com/MFJ-123/stray-animal-rescue-system)。本次初始化内容包括协作方案、追踪清单、模板和两份基线文档，已有可运行基础工程，具体启动和配置见根 README，业务功能仍待后续实现。原有 A—E 分工继续适用。
 
 组长后续在 Settings 的 Collaborators 入口添加其余四人的真实 GitHub 用户名；成员接受邀请后即可提交功能分支。当前未发送邀请，也未自动建立 Issue 或配置分支保护。
 
@@ -50,4 +50,4 @@ git merge origin/main
 - 将 docs/team.csv 的 B—E 映射为真实姓名和 GitHub 用户名。
 - `.github/CODEOWNERS.example` 只是映射样例。填入有仓库写权限的真实用户名后，按实际套餐决定是否改为 CODEOWNERS；不能原样启用占位符。
 - 协作资料检查工作流上传后才会在 GitHub 运行；本地验证不代表云端已运行。
-- G1 完成时，A 补齐应用构建和测试工作流，并把通过的检查列为合并条件。
+- 应用基础工作流已提供，后续持续补充业务测试，并由组长在仓库设置中配置合并条件。
