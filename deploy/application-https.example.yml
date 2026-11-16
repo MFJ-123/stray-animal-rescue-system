@@ -1,0 +1,13 @@
+# 复制到仓库外的配置目录，填写自己的证书路径；证书和密码不提交。
+server:
+  address: ${SAR_BIND_ADDRESS:127.0.0.1}
+  port: ${SAR_PORT:8443}
+  ssl:
+    enabled: true
+    key-store: ${SAR_SSL_KEY_STORE}
+    key-store-password: ${SAR_SSL_KEY_STORE_PASSWORD}
+    key-store-type: PKCS12
+  servlet:
+    session:
+      cookie:
+        secure: true

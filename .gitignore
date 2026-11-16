@@ -26,3 +26,7 @@ logs/
 ~$*
 .DS_Store
 Thumbs.db
+test-results/
+playwright-report/
+frontend/.env.local
+.devtools/

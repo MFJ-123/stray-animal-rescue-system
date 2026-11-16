@@ -1,0 +1,85 @@
+name: Application foundation
+on:
+  push:
+    branches: [main, feat/a-foundation]
+  pull_request:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  frontend:
+    name: Frontend types tests and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm install --global npm@11.6.2
+      - run: npm ci
+      - run: npm test
+      - run: npm run build
+  mysql-and-browser:
+    name: Java MySQL migration and browser integration
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    services:
+      mysql:
+        image: mysql:8.0.46
+        env:
+          MYSQL_DATABASE: sar_foundation_ci
+          MYSQL_USER: sar_ci
+          MYSQL_PASSWORD: ci-only-disposable
+          MYSQL_ROOT_PASSWORD: ci-only-root
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping -h 127.0.0.1 --silent"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=12
+    env:
+      SAR_DB_URL: jdbc:mysql://127.0.0.1:3306/sar_foundation_ci?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8
+      SAR_DB_USER: sar_ci
+      SAR_DB_PASSWORD: ci-only-disposable
+      SAR_PORT: '8080'
+      SAR_E2E_URL: http://127.0.0.1:8080
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .node-version
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - run: npm install --global npm@11.6.2
+      - run: npm ci && npm run build
+        working-directory: frontend
+      - name: Unit tests and real MySQL integration
+        run: sh mvnw -B -ntp -Pmysql-it verify
+        working-directory: backend
+      - name: Start bundled application
+        run: |
+          java -jar backend/target/sar.jar > /tmp/sar.log 2>&1 &
+          for attempt in $(seq 1 60); do
+            if curl --fail --silent http://127.0.0.1:8080/api/v1/system/status > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/sar.log
+          exit 1
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Browser tests on desktop and mobile
+        run: npm run test:e2e
+        working-directory: frontend

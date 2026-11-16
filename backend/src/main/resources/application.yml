@@ -1,0 +1,36 @@
+spring:
+  application:
+    name: sar
+  datasource:
+    url: ${SAR_DB_URL:jdbc:mysql://127.0.0.1:3306/sar?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8}
+    username: ${SAR_DB_USER:sar_app}
+    password: ${SAR_DB_PASSWORD}
+    hikari:
+      maximum-pool-size: 5
+      connection-timeout: 5000
+  flyway:
+    locations: classpath:db/migration
+    clean-disabled: true
+    validate-migration-naming: true
+  jackson:
+    time-zone: UTC
+  mvc:
+    problemdetails:
+      enabled: false
+server:
+  address: ${SAR_BIND_ADDRESS:127.0.0.1}
+  port: ${SAR_PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+  servlet:
+    session:
+      timeout: 30m
+      cookie:
+        http-only: true
+        same-site: lax
+  ssl:
+    enabled: ${SAR_SSL_ENABLED:false}
+logging:
+  pattern:
+    level: '%5p [requestId=%X{requestId:-none}]'

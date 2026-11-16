@@ -1,33 +1,108 @@
 # 流浪动物救助系统
 
-这是项目的协作初始化资料，包含五人分工、接口和数据边界、需求与验收追踪、GitHub 协作模板。当前尚无应用源码，不是可以启动的系统；公开仓库地址为 https://github.com/MFJ-123/stray-animal-rescue-system 。成员邀请待组长填写四位组员的 GitHub 用户名后办理。
+课程项目共用基础工程，采用 Vue 3、Java 17、Spring Boot 和 MySQL Server 8.0.46 社区版 / InnoDB。仓库：[MFJ-123/stray-animal-rescue-system](https://github.com/MFJ-123/stray-animal-rescue-system)。
 
-先阅读 [五人分工与集成方案](docs/五人分工与集成方案.md)。成员 A 是组长，其余 B—E 待填写真实姓名和 GitHub 用户名；不按个人特长或开发周期预设任务。
+当前版本可以运行工作台、导航到七个模块说明页，并通过真实后端接口检查 MySQL 连接和迁移结果。已具备统一请求、响应、错误处理和请求号。注册登录、角色权限、服务端幂等、审计、消息及七个模块的实际业务功能待后续任务完成；当前页面不能作为有权限控制的正式业务系统上线。
+
+## 环境准备
+
+| 组件 | 统一版本 | 确认方式 |
+| --- | --- | --- |
+| JDK | 17，设置 JAVA_HOME | java -version |
+| Node.js | 24.22.1 | node --version |
+| npm | 11.6.2 | npm --version；需要时 npm install --global npm@11.6.2 |
+| Maven | 3.9.11，backend/mvnw 自动获取 | 首次使用需网络，无需单独安装 |
+| MySQL Server | 8.0.46，InnoDB | 连接后 SELECT VERSION(); |
+
+Workbench 8.0 CE 是可选管理工具。依赖由 pom.xml、Maven Wrapper、.node-version 和 package-lock.json 锁定，具体版本见[接入说明](docs/基础工程接入说明.md)。
+
+## 获取项目和建立数据库
+
+```powershell
+git clone https://github.com/MFJ-123/stray-animal-rescue-system.git
+Set-Location stray-animal-rescue-system
+```
+
+使用 Workbench 以本机数据库管理员连接，先将以下密码占位内容改为自己的专用密码，再执行；不要提交改后的密码：
+
+```sql
+SELECT VERSION();
+CREATE DATABASE sar CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci;
+CREATE USER 'sar_app'@'127.0.0.1' IDENTIFIED BY '替换为本机专用密码';
+GRANT ALL PRIVILEGES ON sar.* TO 'sar_app'@'127.0.0.1';
+```
+
+如已有同名库或账号，先确认用途或换新名称，不删除已有数据。各人使用自己的数据库；应用启动时 Flyway 自动执行 db/migration 的 SQL，不要手动重复执行 V001。
+
+## 开发启动
+
+一个 PowerShell 终端进入 backend 目录，设置当前终端环境：
+
+```powershell
+$env:JAVA_HOME = '你的JDK17安装目录'
+$env:Path = "$env:JAVA_HOME\bin;$env:Path"
+$env:SAR_DB_URL = 'jdbc:mysql://127.0.0.1:3306/sar?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true&characterEncoding=UTF-8'
+$env:SAR_DB_USER = 'sar_app'
+$dbSecret = Read-Host '输入本机数据库密码' -AsSecureString
+$env:SAR_DB_PASSWORD = [System.Net.NetworkCredential]::new('', $dbSecret).Password
+.\mvnw.cmd spring-boot:run
+```
+
+第二个终端进入 frontend 目录：
+
+```powershell
+npm ci
+npm run dev
+```
+
+打开 **http://127.0.0.1:5173**，工作台应显示“后端与数据库已连接”。前端将 /api 代理到后端 8080，无需开放跨源权限。后端自检接口为 GET http://127.0.0.1:8080/api/v1/system/status，实际读取数据库版本和基础记录；失败返回统一 503。两项服务仅绑定 127.0.0.1，停止时 Ctrl+C。
+
+macOS/Linux 用 export 设置同名环境变量，后端执行 sh mvnw spring-boot:run；前端命令相同。
+
+## 测试和统一打包
+
+前端目录：
+
+```powershell
+npm test
+npm run build
+```
+
+后端目录：
+
+```powershell
+.\mvnw.cmd test
+# 先设置 SAR_DB_* 指向独立 MySQL 8.0.46 测试库，再运行集成验证：
+.\mvnw.cmd -Pmysql-it verify
+```
+
+普通后端测试不依赖数据库；集成测试执行真实迁移、重复迁移、SQL 和 HTTP 验证，不使用已有业务数据。前后端启动后，在 frontend 执行 npx playwright install chromium，再执行 npm run test:e2e，验证桌面/手机尺寸的真实连接、导航、刷新与失败恢复。浏览器下载不可用时，可在本机设置 SAR_BROWSER_EXECUTABLE 为已有 Chrome 的完整程序路径；CI 使用 Playwright 配套 Chromium。
+
+在仓库根目录统一构建。Windows 下先停止正在运行的旧 JAR，再执行，以免旧进程锁住构建文件：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/build.ps1
+# 配置好专用测试库后可加 -WithMysqlTests
+```
+
+产物 **backend/target/sar.jar** 含前端页面和迁移 SQL。保留数据库环境变量，根目录执行 java -jar backend/target/sar.jar，打开 **http://127.0.0.1:8080**，无需单独运行前端。Hash 路由支持模块页面刷新。Linux/macOS 先在 frontend 执行 npm ci、npm test、npm run build，再到 backend 执行 sh mvnw -B -ntp verify。
+
+开发默认 HTTP；HTTPS、启停方式见[部署说明](deploy/README.md)。正式 HTTPS 浏览器信任与完整备份恢复在后续发布任务验收。
+
+## 分工和资料
 
 | 成员 | 主责 |
 | --- | --- |
-| A | C1、C7 审计及事件基础设施、共同工程、集成发布 |
-| B | C2 线索、C3 救助任务与协作 |
-| C | C4 动物与照护、附件 |
-| D | C5 领养申请与交接、迁移登记 |
-| E | C6 退养回访、C7 消息举报统计、联合验收组织 |
+| A | C1、C7审计与事件基础设施、公共工程和发布 |
+| B | C2线索、C3救助任务 |
+| C | C4动物与照护、附件 |
+| D | C5领养申请与交接、迁移登记 |
+| E | C6退养回访、C7消息举报统计、联合验收组织 |
 
-## 资料入口
+- [基础工程接入](docs/基础工程接入说明.md)、[本次验证记录](docs/基础工程验证记录.md)
+- [五人分工](docs/五人分工与集成方案.md)、[GitHub协作](docs/GitHub建仓与操作.md)
+- [40条需求](docs/requirements.csv)、[21个用例](docs/test-matrix.csv)、[10项质量指标](docs/quality-matrix.csv)
+- [任务清单](docs/backlog.csv)、[接口模板](docs/接口契约模板.md)、[跨模块契约](docs/跨模块契约清单.md)
+- [Word基线](docs/baseline/manifest.json)、[数据库版本变更](docs/数据库版本变更记录.md)、[发布清单](docs/发布验收清单.md)
 
-- [GitHub 建仓和日常操作](docs/GitHub建仓与操作.md)
-- [40 条需求分工](docs/requirements.csv)
-- [21 个验收用例](docs/test-matrix.csv)
-- [10 项质量指标](docs/quality-matrix.csv)
-- [启动任务清单](docs/backlog.csv)
-- [接口契约模板](docs/接口契约模板.md)
-- [跨模块契约清单](docs/跨模块契约清单.md)
-- [源文档与校验清单](docs/baseline/manifest.json)
-- [发布验收清单](docs/发布验收清单.md)
-
-技术基线为 Vue 3、Java 17、Spring Boot、MySQL Server 8.0.46 社区版 / InnoDB。MySQL Workbench 8.0 CE 是数据库管理工具，其版本不代表数据库服务端版本；连接数据库后执行 `SELECT VERSION();` 核对实际服务端版本。
-
-业务范围以 docs/baseline 下两份原文为准；数据库版本按组长确认的[数据库版本变更记录](docs/数据库版本变更记录.md)执行，该记录替代原概要设计中的 MySQL 8.4 选型。当前脚手架目录只有职责说明，具体应用依赖版本、构建及启动命令由 A 在工程骨架任务完成后补齐并验证。
-
-## 本地资料检查
-
-在仓库根目录执行 `python scripts/check_plan.py`（Python 3 标准库即可）。它检查需求和验收编号覆盖、负责人、基线文档哈希和相对链接，不会验证 Java/Vue 或业务实现。随附 GitHub Actions 仅运行这一资料检查；应用源码建立后必须另外增加实际应用测试。
+python scripts/check_plan.py 仅检查资料。Application foundation 工作流另行验证前端、Java、真实 MySQL 和浏览器；通过这些工程检查不代表业务功能已经通过验收。
