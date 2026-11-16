@@ -24,7 +24,9 @@
 - [源文档与校验清单](docs/baseline/manifest.json)
 - [发布验收清单](docs/发布验收清单.md)
 
-技术基线为 Vue 3、Java 17、Spring Boot、MySQL 8.4 / InnoDB。业务范围以 docs/baseline 下两份原文为准。当前脚手架目录只有职责说明，具体依赖版本、应用构建及启动命令由 A 在工程骨架任务完成后补齐并验证。
+技术基线为 Vue 3、Java 17、Spring Boot、MySQL Server 8.0.46 社区版 / InnoDB。MySQL Workbench 8.0 CE 是数据库管理工具，其版本不代表数据库服务端版本；连接数据库后执行 `SELECT VERSION();` 核对实际服务端版本。
+
+业务范围以 docs/baseline 下两份原文为准；数据库版本按组长确认的[数据库版本变更记录](docs/数据库版本变更记录.md)执行，该记录替代原概要设计中的 MySQL 8.4 选型。当前脚手架目录只有职责说明，具体应用依赖版本、构建及启动命令由 A 在工程骨架任务完成后补齐并验证。
 
 ## 本地资料检查
 
