@@ -2,7 +2,7 @@
 
 课程项目共用基础工程，采用 Vue 3、Java 17、Spring Boot 和 MySQL Server 8.0.46 社区版 / InnoDB。仓库：[MFJ-123/stray-animal-rescue-system](https://github.com/MFJ-123/stray-animal-rescue-system)。
 
-当前版本包含工作台、注册登录、会话保护、个人资料与改密、志愿者资格申请审核、管理角色配置及资格管理。公共角色/对象权限、字段白名单、公开只读入口和通用幂等受理已提供；个人资料接口已实际接入。账户关键操作与审计同事务提交。实际暂停须接入 B/C/E 的责任查询，缺失时安全阻止；其他业务模块、完整运营审计、outbox和消息仍待后续实现。
+当前版本包含账户与资格功能、公共权限和幂等机制、审计查询与追加纠错、事件投递监控及后台领取重试。账户关键操作与审计、outbox同事务提交；消费者未接入时事件保留待处理。实际暂停须接入 B/C/E 的责任查询；E负责站内消息及其他运营业务，各模块仍需接入自己的审计和事件调用。
 
 ## 环境准备
 
@@ -106,6 +106,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 - [基础工程接入](docs/基础工程接入说明.md)、[基础验证记录](docs/基础工程验证记录.md)
 - [账户与资格接入](docs/账户与资格接入说明.md)、[账户验证记录](docs/账户与资格验证记录.md)
 - [公共权限与接口接入](docs/公共权限与接口接入说明.md)、[公共机制验证记录](docs/公共机制验证记录.md)
+- [审计与事件接入](docs/审计与事件接入说明.md)、[审计与事件验证记录](docs/审计与事件验证记录.md)
 - [五人分工](docs/五人分工与集成方案.md)、[GitHub协作](docs/GitHub建仓与操作.md)
 - [40条需求](docs/requirements.csv)、[21个用例](docs/test-matrix.csv)、[10项质量指标](docs/quality-matrix.csv)
 - [任务清单](docs/backlog.csv)、[接口模板](docs/接口契约模板.md)、[跨模块契约](docs/跨模块契约清单.md)

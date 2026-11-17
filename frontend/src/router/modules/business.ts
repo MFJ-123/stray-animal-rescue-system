@@ -13,6 +13,6 @@ export const businessModules = [
 
 export const businessRoutes: RouteRecordRaw[] = businessModules.map(module => ({
   path: module.path,
-  component: module.path === '/access' ? () => import('../../views/access/AccountView.vue') : () => import('../../views/ModuleView.vue'),
+  component: module.path === '/access' ? () => import('../../views/access/AccountView.vue') : module.path === '/operations' ? () => import('../../views/operations/OperationsView.vue') : () => import('../../views/ModuleView.vue'),
   meta: { ...module },
 }))

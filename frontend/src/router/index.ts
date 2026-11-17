@@ -7,6 +7,8 @@ export const router = createRouter({
   routes: [
     { path: '/', component: () => import('../views/HomeView.vue'), meta: { title: '项目工作台' } },
     ...businessRoutes,
+    { path: '/operations/audit', component: () => import('../views/operations/AuditView.vue'), meta: { title: '操作审计' } },
+    { path: '/operations/events', component: () => import('../views/operations/EventView.vue'), meta: { title: '事件投递监控' } },
     { path: '/login', component: () => import('../views/access/LoginView.vue'), meta: { title: '注册与登录' } },
     { path: '/access/roles', component: () => import('../views/access/ManageView.vue'), meta: { title: '管理角色配置', manageKind: 'roles' } },
     { path: '/access/review', component: () => import('../views/access/ManageView.vue'), meta: { title: '志愿者申请审核', manageKind: 'review' } },

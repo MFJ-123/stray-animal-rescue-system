@@ -1,0 +1,63 @@
+import { test, expect, type APIRequestContext, type Page } from '@playwright/test'
+const unique = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 6)
+const password = 'BrowserFixture123'
+async function mutate(api: APIRequestContext, path: string, data: unknown) {
+  const csrf = await (await api.get('/api/v1/csrf')).json()
+  return api.post('/api/v1' + path, { data, headers: { 'X-XSRF-TOKEN': csrf.data.token } })
+}
+async function login(page: Page, account: string, secret: string) {
+  await page.goto('/#/login')
+  await page.getByLabel('账号', { exact: true }).fill(account)
+  await page.getByLabel('密码', { exact: true }).fill(secret)
+  await page.getByRole('button', { name: '登录', exact: true }).click()
+  await expect(page.getByRole('heading', { name: '个人账户', exact: true })).toBeVisible()
+}
+test('admin filters audit, appends correction and inspects retained pending events', async ({ page, browser }) => {
+  const admin = process.env.SAR_E2E_ADMIN_ACCOUNT, secret = process.env.SAR_E2E_ADMIN_PASSWORD
+  test.skip(!admin || !secret, '使用独立测试管理员验证真实审计流程')
+  const applicant = await browser.newContext({ baseURL: process.env.SAR_E2E_URL || 'http://127.0.0.1:5173' })
+  try {
+    const account = 'audit' + unique()
+    expect((await mutate(applicant.request, '/accounts', { account, password, nickname: '审计申请人' })).ok()).toBe(true)
+    expect((await mutate(applicant.request, '/sessions', { account, password })).ok()).toBe(true)
+    const applied = await (await mutate(applicant.request, '/volunteer-requests', { material: '申请材料全文仅供申请人和审核管理使用13812345678', requestKey: 'browser-' + unique() })).json()
+    await login(page, admin!, secret!)
+    await page.goto('/#/operations/audit')
+    await page.getByLabel('请求号', { exact: true }).fill(applied.requestId)
+    await page.getByRole('button', { name: '查询审计', exact: true }).click()
+    await expect(page.locator('.audit-item')).toHaveCount(1)
+    await page.locator('.audit-item').getByRole('button').click()
+    const detail = page.getByRole('region', { name: '审计详情' })
+    await expect(detail).toContainText('提交资格申请')
+    await expect(detail).not.toContainText('申请材料全文')
+    await expect(detail).not.toContainText('13812345678')
+    await page.getByLabel('纠错说明', { exact: true }).fill('已复核此记录，补充说明并保留原始处理事实')
+    await page.getByRole('button', { name: '追加纠错说明', exact: true }).click()
+    await expect(page.getByRole('status')).toContainText('纠错说明已追加')
+    await expect(detail.locator('.correction-item')).toHaveCount(1)
+    await expect(detail).toContainText('提交资格申请')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    await page.goto('/#/operations/events')
+    await expect(page.getByRole('heading', { name: '事件投递监控', exact: true })).toBeVisible()
+    await expect(page.locator('main')).toContainText('尚未接入消息处理服务')
+    await page.getByRole('combobox', { name: '处理状态', exact: true }).selectOption('PENDING')
+    await page.getByRole('button', { name: '刷新事件' }).click()
+    await expect(page.locator('.history-item').first()).toContainText('待处理')
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+    const monitor = await (await page.request.get('/api/v1/outbox-events')).json()
+    expect(monitor.data.counts.PENDING).toBeGreaterThan(0)
+    expect(monitor.data.events.items[0]).not.toHaveProperty('payload')
+    expect(monitor.data.events.items[0]).not.toHaveProperty('leaseToken')
+  } finally { await applicant.close().catch(() => {}) }
+})
+test('ordinary account cannot read audit or event management', async ({ page }) => {
+  const account = 'noaudit' + unique()
+  expect((await mutate(page.request, '/accounts', { account, password, nickname: '普通账户' })).ok()).toBe(true)
+  await login(page, account, password)
+  await page.goto('/#/operations/audit')
+  await expect(page.getByRole('alert')).toContainText('没有审计查询权限')
+  expect((await page.request.get('/api/v1/audit-logs')).status()).toBe(403)
+  await page.goto('/#/operations/events')
+  await expect(page.getByRole('alert')).toContainText('仅向系统管理员开放')
+  expect((await page.request.get('/api/v1/outbox-events')).status()).toBe(403)
+})

@@ -34,3 +34,7 @@ server:
 logging:
   pattern:
     level: '%5p [requestId=%X{requestId:-none}]'
+sar:
+  outbox:
+    enabled: ${SAR_OUTBOX_ENABLED:true}
+    delay-ms: 5000

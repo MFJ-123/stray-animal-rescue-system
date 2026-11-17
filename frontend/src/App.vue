@@ -35,6 +35,7 @@ watch(() => route.fullPath, () => { menuOpen.value = false })
         </RouterLink>
         <template v-if="hasRole('SYSTEM_ADMIN') || hasRole('RESCUE_ADMIN')"><p class="nav-label modules-label">管理入口</p><RouterLink v-if="hasRole('SYSTEM_ADMIN')" to="/access/roles" class="nav-item" active-class="selected">管理角色配置</RouterLink><RouterLink v-if="hasRole('RESCUE_ADMIN')" to="/access/review" class="nav-item" active-class="selected">志愿者申请审核</RouterLink><RouterLink v-if="hasRole('RESCUE_ADMIN')" to="/access/volunteers" class="nav-item" active-class="selected">志愿者资格管理</RouterLink></template>
       </nav>
+      <nav v-if="['SYSTEM_ADMIN','RESCUE_ADMIN','ADOPTION_ADMIN'].some(hasRole)" aria-label="审计与事件" :class="{ open: menuOpen }"><RouterLink to="/operations/audit" class="nav-item" active-class="selected">操作审计</RouterLink><RouterLink v-if="hasRole('SYSTEM_ADMIN')" to="/operations/events" class="nav-item" active-class="selected">事件投递监控</RouterLink></nav>
       <div class="sidebar-footer"><span class="small-dot"></span>基础工程 · 0.1.0</div>
     </aside>
     <div class="workspace">

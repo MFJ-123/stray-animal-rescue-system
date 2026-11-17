@@ -35,9 +35,9 @@ onMounted(checkConnection)
     <button class="primary-button" :disabled="loading" @click="checkConnection">{{ loading ? '检查中…' : '重新检查' }}<span aria-hidden="true">↗</span></button>
   </section>
   <section aria-labelledby="modules-title"><div class="section-title-row"><h2 id="modules-title">业务模块</h2><span class="muted">7 个模块 · 5 人协作</span></div>
-    <p class="section-description">账户与资格功能已接入，其他业务模块等待后续开发。</p>
+    <p class="section-description">账户与资格、审计和事件监控已接入，其他业务功能等待后续开发。</p>
     <div class="module-grid"><RouterLink v-for="module in businessModules" :key="module.path" :to="module.path" class="module-card">
-      <div class="card-top"><span class="module-number">{{ module.number }}</span><span class="module-state">{{ module.path === '/access' ? '已接入' : '待接入' }}</span></div>
+      <div class="card-top"><span class="module-number">{{ module.number }}</span><span class="module-state">{{ module.path === '/access' ? '已接入' : module.path === '/operations' ? '部分接入' : '待接入' }}</span></div>
       <h3>{{ module.title }}</h3><p>{{ module.description }}</p><div class="card-bottom"><span>负责人 {{ module.owner }}</span><span aria-hidden="true">→</span></div>
     </RouterLink></div>
   </section>
