@@ -1,6 +1,7 @@
 package cn.edu.sar.web.system;
 
 import cn.edu.sar.common.api.ApiResponse;
+import cn.edu.sar.common.web.PublicRead;
 import cn.edu.sar.domain.system.SystemStatusService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.http.CacheControl;
@@ -16,7 +17,7 @@ public class SystemController {
 
     public SystemController(SystemStatusService service) { this.service = service; }
 
-    @GetMapping("/status")
+    @PublicRead @GetMapping("/status")
     public ResponseEntity<ApiResponse<SystemStatusService.Status>> status(HttpServletRequest request) {
         return ResponseEntity.ok().cacheControl(CacheControl.noStore()).body(ApiResponse.success(service.status(), request));
     }

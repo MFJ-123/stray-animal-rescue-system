@@ -1,7 +1,7 @@
 name: Application foundation
 on:
   push:
-    branches: [main, feat/a-foundation, feat/a-access]
+    branches: [main, feat/a-foundation, feat/a-access, feat/a-common]
   pull_request:
     branches: [main]
 permissions:

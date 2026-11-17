@@ -1,8 +1,12 @@
 package cn.edu.sar.web.access;
 
 import cn.edu.sar.common.api.ApiResponse;
+import cn.edu.sar.common.command.IdempotencyService;
+import cn.edu.sar.common.security.ObjectAuthorization;
+import cn.edu.sar.domain.access.AccessModels.User;
 import cn.edu.sar.common.web.AccessInterceptor;
 import cn.edu.sar.common.web.RequestIdFilter;
+import cn.edu.sar.common.web.PublicRead;
 import cn.edu.sar.domain.access.AccessService;
 import cn.edu.sar.domain.access.SessionService;
 import cn.edu.sar.web.access.AccessCommands.*;
@@ -21,7 +25,11 @@ import org.springframework.web.bind.annotation.*;
 public class AccessController {
     private final AccessService access;
     private final SessionService sessions;
-    public AccessController(AccessService access,SessionService sessions) { this.access=access;this.sessions=sessions; }
+    private final IdempotencyService commands;
+    private final ObjectAuthorization objects;
+    public AccessController(AccessService access,SessionService sessions,IdempotencyService commands,ObjectAuthorization objects) {
+        this.access=access;this.sessions=sessions;this.commands=commands;this.objects=objects;
+    }
     private long actor(HttpServletRequest request) { return AccessInterceptor.current(request).id(); }
     private Object ok(Object data,HttpServletRequest request) { return ApiResponse.success(data,request); }
     private void cookie(HttpServletRequest request,HttpServletResponse response,String token) {
@@ -29,7 +37,7 @@ public class AccessController {
         if(token==null) builder.maxAge(0);
         response.addHeader(HttpHeaders.SET_COOKIE,builder.build().toString());
     }
-    @GetMapping("/csrf") public Object csrf(CsrfToken token,HttpServletRequest request) { return ok(Map.of("token",token.getToken(),"headerName",token.getHeaderName()),request); }
+    @PublicRead @GetMapping("/csrf") public Object csrf(CsrfToken token,HttpServletRequest request) { return ok(Map.of("token",token.getToken(),"headerName",token.getHeaderName()),request); }
     @PostMapping("/accounts") public Object register(@RequestBody @Valid Register input,HttpServletRequest request) { return ok(access.register(input.account(),input.password(),input.nickname()),request); }
     @PostMapping("/sessions") public Object login(@RequestBody @Valid Login input,HttpServletRequest request,HttpServletResponse response) {
         var result=sessions.login(input.account(),input.password(),request.getRemoteAddr());
@@ -40,8 +48,19 @@ public class AccessController {
     @DeleteMapping("/sessions/current") public Object logout(HttpServletRequest request,HttpServletResponse response) {
         sessions.logout(AccessInterceptor.token(request));cookie(request,response,null);return ok(Map.of("loggedOut",true),request);
     }
-    @GetMapping("/accounts/me") public Object me(HttpServletRequest request) { return ok(access.me(actor(request)),request); }
-    @PatchMapping("/accounts/me") public Object profile(@RequestBody @Valid Profile input,HttpServletRequest request) { return ok(access.profile(actor(request),input.nickname(),input.contact(),input.expectedVersion()),request); }
+    @GetMapping("/accounts/me") public Object me(HttpServletRequest request) {
+        long actor=actor(request); User user=access.me(actor);
+        return ok(objects.project(actor,"ACCOUNT",user.id(),Map.of("id",user.id(),"account",user.account(),"nickname",user.nickname(),
+            "contact",user.contact(),"roles",user.roles(),"volunteerState",user.volunteerState(),"version",user.version())),request);
+    }
+    @PatchMapping("/accounts/me") public Object profile(@RequestBody @Valid Profile input,HttpServletRequest request) {
+        long actor=actor(request);
+        var result=commands.execute(actor,"ACCOUNT.PROFILE.V1",input.requestKey(),
+            Map.of("nickname",input.nickname(),"contact",input.contact(),"expectedVersion",input.expectedVersion()),User.class,
+            ()->objects.require(actor,"ACCOUNT",Long.toString(actor),"UPDATE_PROFILE"),
+            ()->access.profile(actor,input.nickname(),input.contact(),input.expectedVersion()));
+        return ok(result,request);
+    }
     @PostMapping("/accounts/me/password") public Object password(@RequestBody @Valid Password input,HttpServletRequest request,HttpServletResponse response) {
         access.password(actor(request),input.oldPassword(),input.newPassword(),input.expectedVersion(),RequestIdFilter.get(request));cookie(request,response,null);return ok(Map.of("changed",true),request);
     }

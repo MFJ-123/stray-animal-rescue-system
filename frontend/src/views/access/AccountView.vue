@@ -2,6 +2,7 @@
 import { onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { request, createRequestKey } from '../../api/client'
+import { versionedCommand } from '../../api/commands'
 import { currentUser, refreshMe, post, roleLabel, stateLabel, errorText, type User, type Application, type Page } from '../../api/access'
 const router = useRouter()
 const profile = reactive({ nickname: '', contact: '' }), password = reactive({ oldPassword: '', newPassword: '' })
@@ -17,7 +18,20 @@ async function action(work: () => Promise<void>) {
   busy.value = true; error.value = ''; notice.value = ''
   try { await work() } catch (e) { error.value = errorText(e) } finally { busy.value = false }
 }
-const saveProfile = () => action(async () => { currentUser.value = (await request<User>('/accounts/me', { method: 'PATCH', body: JSON.stringify({ ...profile, expectedVersion: currentUser.value!.version }) })).data; notice.value = '个人资料已保存。' })
+let profileCommand: ReturnType<typeof versionedCommand<User>> | undefined
+let profileIntent = ''
+const saveProfile = () => action(async () => {
+  const version = currentUser.value!.version
+  const intent = JSON.stringify({ ...profile, version })
+  if (!profileCommand || intent !== profileIntent) {
+    profileCommand = versionedCommand<User>('/accounts/me', { ...profile }, version, 'PATCH')
+    profileIntent = intent
+  }
+  currentUser.value = (await profileCommand.submit()).data
+  profileCommand = undefined
+  await refreshMe() // A receipt is an operation snapshot; current roles come from a fresh authenticated read.
+  notice.value = '个人资料已保存。'
+})
 const changePassword = () => action(async () => { await post('/accounts/me/password', { ...password, expectedVersion: currentUser.value!.version }); password.oldPassword = ''; password.newPassword = ''; currentUser.value = null; await router.push('/login') })
 const apply = () => action(async () => { await post('/volunteer-requests', { material: material.value, requestKey: key.value }); material.value = ''; key.value = createRequestKey(); notice.value = '申请已提交，可在下方查看审核进度。'; await load() })
 async function next(delta: number) { page.value += delta; await action(load) }

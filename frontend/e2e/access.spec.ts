@@ -92,3 +92,31 @@ test('ordinary user cannot access management data', async ({ page }) => {
   await expect(page.getByRole('alert')).toContainText('没有此管理权限')
   expect((await page.request.get('/api/v1/accounts')).status()).toBe(403)
 })
+
+test('lost profile response can be retried with the same key and only one version change', async ({ page }) => {
+  const account = 'retry' + unique()
+  expect((await mutate(page.request, '/accounts', { account, password, nickname: '重试测试' })).ok()).toBe(true)
+  await login(page, account, password)
+  const before = (await (await page.request.get('/api/v1/accounts/me')).json()).data
+  const bodies: string[] = []
+  await page.route('**/api/v1/accounts/me', async route => {
+    if (route.request().method() !== 'PATCH') { await route.continue(); return }
+    bodies.push(route.request().postData()!)
+    if (bodies.length === 1) {
+      const committed = await route.fetch()
+      expect(committed.status()).toBe(200)
+      await route.abort('failed') // The server committed; the browser never receives that success.
+    } else await route.continue()
+  })
+  await page.getByLabel('昵称', { exact: true }).fill('网络重试后昵称')
+  await page.getByRole('button', { name: '保存资料' }).click()
+  await expect(page.getByRole('alert')).toContainText('无法连接服务')
+  expect(bodies).toHaveLength(1)
+  await page.getByRole('button', { name: '保存资料' }).click()
+  await expect(page.getByRole('status')).toContainText('个人资料已保存')
+  expect(bodies).toHaveLength(2)
+  expect(bodies[1]).toBe(bodies[0])
+  const after = (await (await page.request.get('/api/v1/accounts/me')).json()).data
+  expect(after.version).toBe(before.version + 1)
+  expect(after.nickname).toBe('网络重试后昵称')
+})

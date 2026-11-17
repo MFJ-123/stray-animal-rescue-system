@@ -2,3 +2,4 @@
 V001,V001__foundation.sql,A,无,sar_foundation,本次基础工程提交,独立测试库已验证；共享业务环境未执行
 V002,V002__access.sql,A,V001,account;role_grant;access_session;login_guard;volunteer_request;audit_log;access_admin_guard,本次账户功能提交,独立测试库及本机预览已验证；待组员复核
 V003,V003__volunteer_submission_receipts.sql,A,V002,volunteer_submission_receipt,本次账户功能提交,独立测试库与本机预览验证
+V004,V004__shared_idempotency.sql,A,V003,idempotency_receipt,本次公共机制提交,独立测试库与本机预览验证
