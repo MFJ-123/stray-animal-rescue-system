@@ -1,7 +1,7 @@
 name: Application foundation
 on:
   push:
-    branches: [main, feat/a-foundation]
+    branches: [main, feat/a-foundation, feat/a-access]
   pull_request:
     branches: [main]
 permissions:
@@ -83,3 +83,6 @@ jobs:
       - name: Browser tests on desktop and mobile
         run: npm run test:e2e
         working-directory: frontend
+        env:
+          SAR_E2E_ADMIN_ACCOUNT: accessitadmin
+          SAR_E2E_ADMIN_PASSWORD: FixtureOnly123

@@ -1,10 +1,15 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { ApiError, request } from './client'
 afterEach(() => vi.unstubAllGlobals())
+function stubApi(fetcher: (url: string, options: RequestInit) => Promise<Response>) {
+  vi.stubGlobal('fetch', (url: string, options: RequestInit) => url === '/api/v1/csrf'
+    ? Promise.resolve(new Response(JSON.stringify({ code: 'OK', data: { token: 'test-csrf-token' } })))
+    : fetcher(url, options))
+}
 describe('shared API client', () => {
   it('uses same-origin credentials and preserves caller request body', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 'OK', message: '成功', requestId: 'r1', data: { id: '1' } })))
-    vi.stubGlobal('fetch', fetcher)
+    stubApi(fetcher)
     const payload = JSON.stringify({ requestKey: 'same-key', expectedVersion: 1 })
     expect((await request<{ id: string }>('/example', { method: 'POST', body: payload })).data.id).toBe('1')
     expect(fetcher).toHaveBeenCalledWith('/api/v1/example', expect.objectContaining({ credentials: 'same-origin', body: payload }))
@@ -12,7 +17,7 @@ describe('shared API client', () => {
   })
   it('preserves conflict details and request ID without retrying a write', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 'VERSION_CONFLICT', message: '请刷新', requestId: 'r2', data: { version: 2 } }), { status: 409 }))
-    vi.stubGlobal('fetch', fetcher)
+    stubApi(fetcher)
     await expect(request('/example', { method: 'POST', body: '{}' })).rejects.toMatchObject({ status: 409, code: 'VERSION_CONFLICT', requestId: 'r2', data: { version: 2 } })
     expect(fetcher).toHaveBeenCalledTimes(1)
   })
@@ -26,7 +31,7 @@ describe('shared API client', () => {
   })
   it('does not manually set multipart boundary', async () => {
     const fetcher = vi.fn().mockResolvedValue(new Response(JSON.stringify({ code: 'OK', message: '', requestId: 'r3', data: null })))
-    vi.stubGlobal('fetch', fetcher)
+    stubApi(fetcher)
     await request('/attachments', { method: 'POST', body: new FormData() })
     expect((fetcher.mock.calls[0][1].headers as Headers).has('Content-Type')).toBe(false)
   })

@@ -2,7 +2,7 @@
 
 课程项目共用基础工程，采用 Vue 3、Java 17、Spring Boot 和 MySQL Server 8.0.46 社区版 / InnoDB。仓库：[MFJ-123/stray-animal-rescue-system](https://github.com/MFJ-123/stray-animal-rescue-system)。
 
-当前版本可以运行工作台、导航到七个模块说明页，并通过真实后端接口检查 MySQL 连接和迁移结果。已具备统一请求、响应、错误处理和请求号。注册登录、角色权限、服务端幂等、审计、消息及七个模块的实际业务功能待后续任务完成；当前页面不能作为有权限控制的正式业务系统上线。
+当前版本包含工作台、注册登录、会话保护、个人资料与改密、志愿者资格申请审核、管理角色配置及资格管理。账户关键操作与审计同事务提交。实际暂停须接入 B/C/E 的责任查询，缺失时安全阻止；其他业务模块、通用幂等受理、完整运营审计和消息仍待后续实现。
 
 ## 环境准备
 
@@ -59,6 +59,10 @@ npm run dev
 
 macOS/Linux 用 export 设置同名环境变量，后端执行 sh mvnw spring-boot:run；前端命令相同。
 
+## 初始化第一个管理员
+
+普通注册只产生普通用户。第一个系统管理员通过本机环境变量初始化，步骤见[账户与资格接入说明](docs/账户与资格接入说明.md)。仓库没有内置通用管理员密码。你的本机预览管理员凭据另存在工作目录的“本机预览管理员信息.txt”，该文件没有上传 GitHub。
+
 ## 测试和统一打包
 
 前端目录：
@@ -99,7 +103,8 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 | D | C5领养申请与交接、迁移登记 |
 | E | C6退养回访、C7消息举报统计、联合验收组织 |
 
-- [基础工程接入](docs/基础工程接入说明.md)、[本次验证记录](docs/基础工程验证记录.md)
+- [基础工程接入](docs/基础工程接入说明.md)、[基础验证记录](docs/基础工程验证记录.md)
+- [账户与资格接入](docs/账户与资格接入说明.md)、[账户验证记录](docs/账户与资格验证记录.md)
 - [五人分工](docs/五人分工与集成方案.md)、[GitHub协作](docs/GitHub建仓与操作.md)
 - [40条需求](docs/requirements.csv)、[21个用例](docs/test-matrix.csv)、[10项质量指标](docs/quality-matrix.csv)
 - [任务清单](docs/backlog.csv)、[接口模板](docs/接口契约模板.md)、[跨模块契约](docs/跨模块契约清单.md)
