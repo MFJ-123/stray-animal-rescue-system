@@ -9,3 +9,5 @@ src/api/commands.ts中的versionedCommand固定本次操作的参数、expectedV
 公共布局位于 App.vue；路由位于 src/router/modules；各人添加自己的 views/<业务包> 和 api/<业务包>.ts。账户模块已接入注册登录、资料与改密、志愿者申请及管理页面，其他业务页仍为待接入说明。具体接入见[说明](../docs/基础工程接入说明.md)。
 
 npm test 验证请求工具，npm run build 先类型检查再输出 dist。真实前后端启动后可 npm run test:e2e。
+
+views/operations包含运营入口、审计筛选与纠错、事件投递监控；api/operations.ts提供类型及显示名称。审计按管理员职责开放，事件监控仅系统管理员可用；E继续接入消息、举报和统计，现有事件待处理状态来自真实后端。

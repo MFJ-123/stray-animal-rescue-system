@@ -37,5 +37,5 @@ SAR-SYS-0035,回访异常与跟进,C6,E,A;C;D,A,TC-10;TC-19;TC-20;TC-21,待开�
 SAR-SYS-0036,站内消息与待办,C7,E,A;B;C;D,A,TC-11,待开始,,,
 SAR-SYS-0037,内容举报与处置,C7,E,A;B;C,A,TC-11,待开始,,,
 SAR-SYS-0038,业务统计与导出,C7,E,A;B;C;D,A,TC-11,待开始,,,
-SAR-SYS-0039,操作追溯与纠错,C7,A,B;C;D;E,D,TC-11,待开始,,,
+SAR-SYS-0039,操作追溯与纠错,C7,A,B;C;D;E,D,TC-11,待联调,,feat/a-audit-outbox,docs/审计与事件验证记录.md
 SAR-SYS-0040,可靠性与使用体验,全部 FE/BE,A,B;C;D;E,D,TC-12;TC-13;TC-14;TC-21,待开始,,,

@@ -1,6 +1,8 @@
 package cn.edu.sar.persistence.access;
 
 import cn.edu.sar.domain.access.AccessModels.*;
+import cn.edu.sar.domain.operations.AuditWriter;
+import cn.edu.sar.domain.operations.OutboxService;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.util.List;
@@ -11,7 +13,9 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class AccessRepository {
     private final JdbcTemplate jdbc;
-    public AccessRepository(JdbcTemplate jdbc) { this.jdbc = jdbc; }
+    private final AuditWriter audits;
+    private final OutboxService events;
+    public AccessRepository(JdbcTemplate jdbc,AuditWriter audits,OutboxService events) { this.jdbc = jdbc;this.audits=audits;this.events=events; }
     public JdbcTemplate jdbc() { return jdbc; }
     public static java.time.LocalDateTime at(Instant value) { return java.time.LocalDateTime.ofInstant(value,java.time.ZoneOffset.UTC); }
     private final RowMapper<Account> accountMapper = (r,n) -> new Account(r.getLong("id"),r.getString("account"),
@@ -50,6 +54,7 @@ public class AccessRepository {
         return state.isEmpty()?jdbc.queryForObject("SELECT COUNT(*) FROM volunteer_request"+where,Long.class):jdbc.queryForObject("SELECT COUNT(*) FROM volunteer_request"+where+" AND state=?",Long.class,state);
     }
     public void audit(long actor,long target,String action,String before,String after,String reason,String requestId,Instant now) {
-        jdbc.update("INSERT INTO audit_log(actor_id,object_type,object_id,action,before_state,after_state,reason,request_id,created_at) VALUES(?,'ACCOUNT',?,?,?,?,?,?,?)",actor,target,action,before,after,reason,requestId,at(now));
+        long audit=audits.append(new AuditWriter.Change(actor,"ACCESS","ACCOUNT",target,action,before,after,reason,requestId));
+        events.append("AUDIT:"+audit+":ACCESS","ACCESS_CHANGED","ACCOUNT",target,java.util.Map.of("actorId",Long.toString(actor),"targetUserId",Long.toString(target),"auditId",Long.toString(audit)));
     }
 }
