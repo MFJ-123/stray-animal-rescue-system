@@ -95,6 +95,8 @@ class AccessIT {
             for(Future<Application> result:executor.invokeAll(jobs)) assertThat(result.get().state()).isEqualTo("APPROVED");
         } finally { executor.shutdownNow(); }
         assertThat(access.me(id(user)).volunteerState()).isEqualTo("ACTIVE");
+        assertThat(access.apply(id(user),material,"another-key-02","late-retry").id()).isEqualTo(first.id());
+        assertThatThrownBy(()->access.apply(id(user),material+"变更","another-key-02","late-conflict")).isInstanceOf(BusinessException.class);
         assertThat(repo.jdbc().queryForObject("SELECT COUNT(*) FROM audit_log WHERE object_id=? AND action='VOLUNTEER_REVIEWED'",Long.class,id(user))).isEqualTo(1L);
         assertThat(access.applications(id(user),false,"",1,20).total()).isEqualTo(1);
         User other=user();

@@ -95,17 +95,22 @@ public class AccessService {
     public Application apply(long actor,String material,String key,String requestId) {
         Account user=requireAccount(actor,true);
         String hash=SessionService.digest(material);
-        var retried=repo.jdbc().queryForList("SELECT id,request_hash FROM volunteer_request WHERE user_id=? AND request_key=?",actor,key);
+        var retried=repo.jdbc().queryForList("SELECT application_id,request_hash FROM volunteer_submission_receipt WHERE user_id=? AND request_key=?",actor,key);
         if (!retried.isEmpty()) {
             if (!retried.get(0).get("request_hash").equals(hash)) throw new BusinessException(HttpStatus.CONFLICT,"REQUEST_KEY_CONFLICT","同一请求键不能提交不同材料");
-            return repo.application(((Number)retried.get(0).get("id")).longValue());
+            return repo.application(((Number)retried.get(0).get("application_id")).longValue());
         }
         if (user.volunteerState().equals("ACTIVE")) throw new BusinessException(HttpStatus.CONFLICT,"ALREADY_VOLUNTEER","你已具有有效志愿者资格");
         if (user.volunteerState().equals("SUSPENDED")) throw new BusinessException(HttpStatus.CONFLICT,"QUALIFICATION_SUSPENDED","资格已暂停，请联系救助管理员核查责任及后续安排");
         var pending=repo.jdbc().queryForList("SELECT id FROM volunteer_request WHERE user_id=? AND state='PENDING'",actor);
-        if (!pending.isEmpty()) return repo.application(((Number)pending.get(0).get("id")).longValue());
+        if (!pending.isEmpty()) {
+            long existing=((Number)pending.get(0).get("id")).longValue();
+            repo.jdbc().update("INSERT INTO volunteer_submission_receipt(user_id,request_key,request_hash,application_id) VALUES(?,?,?,?)",actor,key,hash,existing);
+            return repo.application(existing);
+        }
         repo.jdbc().update("INSERT INTO volunteer_request(user_id,material,request_key,request_hash,created_at) VALUES(?,?,?,?,?)",actor,material,key,hash,at(clock.instant()));
         long id=repo.jdbc().queryForObject("SELECT id FROM volunteer_request WHERE user_id=? AND request_key=?",Long.class,actor,key);
+        repo.jdbc().update("INSERT INTO volunteer_submission_receipt(user_id,request_key,request_hash,application_id) VALUES(?,?,?,?)",actor,key,hash,id);
         repo.audit(actor,actor,"VOLUNTEER_APPLIED","NONE","PENDING","提交资格申请",requestId,clock.instant());
         return repo.application(id);
     }
