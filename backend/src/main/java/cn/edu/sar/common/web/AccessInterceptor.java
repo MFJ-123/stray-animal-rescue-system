@@ -23,9 +23,9 @@ public class AccessInterceptor implements HandlerInterceptor {
         return (Account)actor;
     }
     @Override public boolean preHandle(HttpServletRequest request,HttpServletResponse response,Object handler) {
-        if (!(handler instanceof HandlerMethod) || !request.getRequestURI().startsWith("/api/")) return true;
+        if (!(handler instanceof HandlerMethod endpoint) || !request.getRequestURI().startsWith("/api/")) return true;
         String path=request.getRequestURI(),method=request.getMethod();
-        if ((method.equals("GET") && (path.equals("/api/v1/system/status") || path.equals("/api/v1/csrf")))
+        if (((method.equals("GET") || method.equals("HEAD")) && endpoint.hasMethodAnnotation(PublicRead.class))
             || (method.equals("POST") && (path.equals("/api/v1/accounts") || path.equals("/api/v1/sessions")))) return true;
         request.setAttribute("sar.actor",sessions.authenticate(token(request)));
         return true;

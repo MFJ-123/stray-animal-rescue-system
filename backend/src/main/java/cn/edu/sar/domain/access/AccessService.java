@@ -1,6 +1,8 @@
 package cn.edu.sar.domain.access;
 
 import cn.edu.sar.common.api.BusinessException;
+import cn.edu.sar.common.api.Versions;
+import cn.edu.sar.common.security.CurrentAccess;
 import cn.edu.sar.domain.access.AccessModels.*;
 import cn.edu.sar.persistence.access.AccessRepository;
 import java.time.Clock;
@@ -19,15 +21,14 @@ public class AccessService {
     private final PasswordEncoder passwords;
     private final Clock clock;
     private final List<ResponsibilityProvider> providers;
-    public AccessService(AccessRepository repo,PasswordEncoder passwords,Clock clock,List<ResponsibilityProvider> providers) {
-        this.repo=repo;this.passwords=passwords;this.clock=clock;this.providers=providers;
+    private final CurrentAccess currentAccess;
+    public AccessService(AccessRepository repo,PasswordEncoder passwords,Clock clock,List<ResponsibilityProvider> providers,CurrentAccess currentAccess) {
+        this.repo=repo;this.passwords=passwords;this.clock=clock;this.providers=providers;this.currentAccess=currentAccess;
         var names=new HashSet<String>();
         for (var provider:providers) if (!Set.of("TASK","CARE","FOLLOWUP").contains(provider.module()) || !names.add(provider.module())) throw new IllegalStateException("Invalid responsibility provider registration");
     }
     public void requireRole(long actor,String role) {
-        Account user=repo.find(actor,false);
-        if (user==null || !user.active()) throw SessionService.unauthorized();
-        if (!repo.roles(actor).contains(role)) throw new BusinessException(HttpStatus.FORBIDDEN,"FORBIDDEN","当前角色没有此操作权限");
+        currentAccess.requireRole(actor,role);
     }
     public Account requireAccount(long id,boolean lock) {
         Account user=repo.find(id,lock);
@@ -41,7 +42,7 @@ public class AccessService {
         return user;
     }
     private void version(Account user,long expected) {
-        if (user.version()!=expected) throw new BusinessException(HttpStatus.CONFLICT,"VERSION_CONFLICT","资料已更新，请刷新后重试");
+        Versions.require(expected,user.version());
     }
     private String nickname(String value) {
         String cleaned=value.strip();
@@ -132,7 +133,7 @@ public class AccessService {
             if (application.state().equals(decision) && application.reason().equals(reason) && Long.toString(actor).equals(application.reviewerId())) return application;
             throw new BusinessException(HttpStatus.CONFLICT,"APPLICATION_REVIEWED","申请已处理，请刷新查看");
         }
-        if (application.version()!=expected) throw new BusinessException(HttpStatus.CONFLICT,"VERSION_CONFLICT","申请已更新，请刷新");
+        Versions.require(expected,application.version());
         repo.jdbc().update("UPDATE volunteer_request SET state=?,reason=?,reviewer_id=?,reviewed_at=?,version=version+1 WHERE id=?",decision,reason,actor,at(clock.instant()),id);
         if (decision.equals("APPROVED")) repo.jdbc().update("UPDATE account SET volunteer_state='ACTIVE',version=version+1 WHERE id=?",Long.parseLong(application.userId()));
         repo.audit(actor,Long.parseLong(application.userId()),"VOLUNTEER_REVIEWED","PENDING",decision,reason,requestId,clock.instant());
