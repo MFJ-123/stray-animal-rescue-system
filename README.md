@@ -110,6 +110,7 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 - [五人分工](docs/五人分工与集成方案.md)、[GitHub协作](docs/GitHub建仓与操作.md)
 - [40条需求](docs/requirements.csv)、[21个用例](docs/test-matrix.csv)、[10项质量指标](docs/quality-matrix.csv)
 - [任务清单](docs/backlog.csv)、[接口模板](docs/接口契约模板.md)、[跨模块契约](docs/跨模块契约清单.md)
-- [Word基线](docs/baseline/manifest.json)、[数据库版本变更](docs/数据库版本变更记录.md)、[发布清单](docs/发布验收清单.md)
+- [当前概要设计说明书（评阅修订版）](docs/design/流浪动物救助系统_系统概要设计说明书（评阅修订版）.docx)、[原始协作基线](docs/baseline/manifest.json)
+- [数据库版本变更](docs/数据库版本变更记录.md)、[发布清单](docs/发布验收清单.md)
 
 python scripts/check_plan.py 仅检查资料。Application foundation 工作流另行验证前端、Java、真实 MySQL 和浏览器；通过这些工程检查不代表业务功能已经通过验收。
